@@ -1,0 +1,269 @@
+<html>
+<head>
+	<title>JS Game</title>
+	<style>
+		canvas {
+		    padding-left: 0;
+		    padding-right: 0;
+		    margin-left: auto;
+		    margin-right: auto;
+		    display: block;
+		    width: 800px;
+
+        }
+        h1{
+        	text-align: center;
+        }
+	</style>
+</head>
+<body>
+	<h1>Play Me</h1>
+
+<!-- Creates the canvas workspace -->
+<canvas id="canvasGameId" width="800" height="600"></canvas>
+
+<!-- Contains JavaScript Code -->
+<script>
+
+//variables
+var canvas;
+var canvasContext;
+var pageHeight;
+var pageWidth;
+var ballPosX = 50;
+var ballPosY = 50;
+var framesPerSecond = 30;
+var ballSpeedX  = 10;
+var ballSpeedY  = 5;
+var paddleOneY  = 250;
+var paddleTwoY  = 250;
+const PADDLE_HEIGHT = 100;
+const MAX_SCORE = 3;
+var visibleWinScreen = true;
+
+var playerOneScore = 0;
+var playerTwoScore = 0;
+
+function calculateMousePos(evt) {
+	var rect = canvas.getBoundingClientRect();
+	var root = document.documentElement;
+	var mousePosX = evt.clientX - rect.left - root.scrollLeft;
+	var mousePosY = evt.clientY - rect.top - root.scrollTop;
+	return {
+		x:mousePosX,
+		y:mousePosY
+	};
+}
+
+function handleMouseClick(evt){
+   
+   if(visibleWinScreen){
+
+   		playerTwoScore  = 0;
+   		playerOneScore  = 0;
+   		visibleWinScreen = false;
+   }
+
+
+}
+
+
+//actions on window load
+window.onload = function(){
+
+	//creates a 2d canvas object
+	canvas = document.getElementById('canvasGameId');
+	canvasContext = canvas.getContext('2d');
+
+    canvasContext.font = "bold 25px Verdana";
+
+
+	//framesPerSecond to call the functions
+	setInterval(function(){
+		moveAll();
+		drawAll();
+	}, 1000/framesPerSecond);
+
+	
+	canvas.addEventListener('mousemove',
+		function(evt) {
+			var mousePos = calculateMousePos(evt);
+			paddleOneY = mousePos.y - (PADDLE_HEIGHT/2);
+		});
+
+	canvas.addEventListener('mousedown', handleMouseClick);
+
+	
+    
+
+	
+}
+
+function resetBall(){
+
+	if(playerOneScore >= MAX_SCORE || playerTwoScore >= MAX_SCORE){
+
+        var winner = new Audio('game/winner.wav');
+		visibleWinScreen = true;
+			winner.play();
+
+	}
+
+	ballSpeedX = -ballSpeedX;
+	ballPosX = canvas.width/2;
+	ballPosY = canvas.height/2;
+}
+
+
+function artificialIntelligence(){
+
+	      var paddleTwoYCenter = paddleTwoY + (PADDLE_HEIGHT/2);
+          
+          if(paddleTwoYCenter < ballPosY-35){
+
+          	paddleTwoY += 6;
+
+          }else if(paddleTwoYCenter > ballPosY+35){
+
+          	paddleTwoY -= 6;
+          }
+
+	}
+
+//encharge of objects motion
+function moveAll(){
+
+	var bounce = new Audio('game/bound.wav');
+	var missed = new Audio('game/miss.wav');
+
+
+	if(visibleWinScreen){
+
+		return;
+	}
+
+    artificialIntelligence();
+	
+    ballPosX += ballSpeedX;
+
+    ballPosY += ballSpeedY;
+
+
+
+    if(ballPosX < 0)
+    {
+    	if(ballPosY > paddleOneY && ballPosY < paddleOneY+PADDLE_HEIGHT){
+
+    		ballSpeedX = -ballSpeedX;
+
+    		var deltaY = ballPosY -(paddleOneY+PADDLE_HEIGHT/2);
+
+    		ballSpeedY = deltaY * 0.35;
+
+    		bounce.play();
+
+    	}else{
+
+    		missed.play();
+    		playerTwoScore++;
+    		resetBall();
+    	}
+    	
+    }
+
+    if(ballPosX > canvas.width){
+
+    	if(ballPosY > paddleTwoY && ballPosY < paddleTwoY+PADDLE_HEIGHT){
+
+    		ballSpeedX = -ballSpeedX;
+
+    		var deltaY = ballPosY -(paddleTwoY+PADDLE_HEIGHT/2);
+
+    		ballSpeedY = deltaY * 0.35;
+
+    		bounce.play();
+
+    	}else{
+
+    		
+    		missed.play();
+    		playerOneScore++;
+    		resetBall();
+    	}
+    	
+    }
+
+     if(ballPosY > canvas.height)
+    {
+    	ballSpeedY = -ballSpeedY;
+    }
+    if(ballPosY < 0)
+    {
+    	ballSpeedY = -ballSpeedY;
+    }
+    
+    
+
+
+}
+
+//encharges of drawing graphics
+function drawAll(){
+
+	
+
+
+	canvasContext.fillStyle = 'black';
+	canvasContext.fillRect(0,0,canvas.width, canvas.height);
+
+	if(visibleWinScreen){
+       
+
+        canvasContext.fillStyle = 'red';
+
+
+        if(playerOneScore >= MAX_SCORE){
+            
+           
+        	canvasContext.fillText("Human Won!", 310,250);
+
+        }else if(playerTwoScore >= MAX_SCORE){
+            
+           
+        	canvasContext.fillText("AI Won!", 330,250);
+
+        }
+   
+        
+		canvasContext.fillText("Click To Continue ", 280,300);
+
+		return;
+	}
+
+
+	console.log(ballPosX);
+
+
+	canvasContext.fillStyle = 'red';
+	canvasContext.fillRect(5, paddleOneY,15,PADDLE_HEIGHT);
+
+	canvasContext.fillStyle = 'red';
+	canvasContext.fillRect(canvas.width - 20, paddleTwoY,15,PADDLE_HEIGHT);
+
+	canvasContext.fillStyle = 'red';
+	canvasContext.beginPath();
+	canvasContext.arc(ballPosX, ballPosY,10,0, Math.PI*2,true);
+	canvasContext.fill();
+
+
+
+	canvasContext.fillText("Human's Score " + playerOneScore, 190,50);
+	canvasContext.fillText("AI's Score " + playerTwoScore, canvas.width-350,50);
+
+}
+
+</script>
+
+<!-- ends JavaScript Code -->
+</body>
+</html>
